@@ -127,6 +127,7 @@ uint64_t platformAlarmGetNext(void)
 #if OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
     if (sIsUsRunning)
     {
+    	fprintf(stderr, "US IS RUNNING\n");
         int32_t micro = (int32_t)(sUsAlarm - otPlatAlarmMicroGetNow());
 
         if (micro < 0)

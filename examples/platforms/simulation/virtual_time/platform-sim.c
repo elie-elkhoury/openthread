@@ -83,6 +83,8 @@ void otSimSendEvent(const struct Event *aEvent)
     rval = sendto(sSockFd, aEvent, offsetof(struct Event, mData) + aEvent->mDataLength, 0, (struct sockaddr *)&sockaddr,
                   sizeof(sockaddr));
 
+    fprintf(stderr, "Sent event: %d\n", aEvent->mEvent);
+
     if (rval < 0)
     {
         perror("sendto");
@@ -92,6 +94,8 @@ void otSimSendEvent(const struct Event *aEvent)
 
 static void receiveEvent(otInstance *aInstance)
 {
+	fprintf(stderr, "RECEIVED AN EVENT!\n");
+
     struct Event event;
     ssize_t      rval = recvfrom(sSockFd, (char *)&event, sizeof(event), 0, NULL, NULL);
 
@@ -107,6 +111,8 @@ static void receiveEvent(otInstance *aInstance)
     {
     case OT_SIM_EVENT_ALARM_FIRED:
     	// Nothing to do. Alarm event is only used to advance time (see above).
+    	fprintf(stderr, "TWAS AN ALARM EVENT...\n");
+    	fprintf(stderr, "mDelay: %ld\n", event.mDelay);
         break;
 
     case OT_SIM_EVENT_RADIO_FRAME_RX:	// Rx of a radio frame is done. Here's struct RadioMessage.
@@ -122,6 +128,8 @@ static void receiveEvent(otInstance *aInstance)
 
     case OT_SIM_EVENT_UART_WRITE:
         otPlatUartReceived(event.mData, event.mDataLength);
+    	fprintf(stderr, "TWAS A UART EVENT...\n");
+    	fprintf(stderr, "%s\n", event.mData);
         break;
 
     default:
@@ -135,6 +143,7 @@ static void platformSendSleepEvent(void)
 
     assert(platformAlarmGetNext() > 0);
     event.mDelay      = platformAlarmGetNext();
+    fprintf(stderr, "platsend delay: %ld\n", event.mDelay);
 #if OPENTHREAD_CONFIG_WHITEFIELD_ENABLE
     event.mNodeId     = gNodeId;
 #endif
@@ -173,7 +182,8 @@ otError otPlatUartSend(const uint8_t *aData, uint16_t aLength)
 
     memcpy(event.mData, aData, aLength);
 
-    otSimSendEvent(&event);
+    if (aLength != 1)
+		otSimSendEvent(&event);
 
     otPlatUartSendDone();
 

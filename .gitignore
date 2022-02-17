@@ -65,6 +65,9 @@ third_party/nlbuild-autotools/repo/third_party/autoconf/missing
 .vscode/**
 cmake-build-*/**
 /tags
+.cproject
+.project
+.settings/
 
 # Python bytecodes
 __pycache__
