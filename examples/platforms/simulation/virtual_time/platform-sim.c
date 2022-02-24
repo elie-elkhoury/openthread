@@ -83,7 +83,10 @@ void otSimSendEvent(const struct Event *aEvent)
     rval = sendto(sSockFd, aEvent, offsetof(struct Event, mData) + aEvent->mDataLength, 0, (struct sockaddr *)&sockaddr,
                   sizeof(sockaddr));
 
-    fprintf(stderr, "Sent event: %d\n", aEvent->mEvent);
+    if(aEvent->mEvent != OT_SIM_EVENT_OTNS_STATUS_PUSH && aEvent->mEvent != OT_SIM_EVENT_UART_WRITE)
+    {
+    	fprintf(stderr, "Sent event: %d\n", aEvent->mEvent);
+    }
 
     if (rval < 0)
     {
@@ -106,6 +109,7 @@ static void receiveEvent(otInstance *aInstance)
     }
 
     platformAlarmAdvanceNow(event.mDelay);
+    fprintf(stderr, "virtual time: %"PRIu64" us\n", sNow);
 
     switch (event.mEvent)
     {
@@ -116,6 +120,7 @@ static void receiveEvent(otInstance *aInstance)
         break;
 
     case OT_SIM_EVENT_RADIO_FRAME_RX:	// Rx of a radio frame is done. Here's struct RadioMessage.
+    	fprintf(stderr, "RECEIVED RADIO FRAME...\n");
         platformRadioReceive(aInstance, event.mData, event.mDataLength, event.mParam1);
         break;
 
