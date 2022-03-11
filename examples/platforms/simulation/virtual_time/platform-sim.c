@@ -72,6 +72,7 @@ static void handleSignal(int aSignal)
 
 void otSimSendEvent(const struct Event *aEvent)
 {
+	fprintf(stderr, "In otSimSendEvent()\n");
     ssize_t            rval;
     struct sockaddr_in sockaddr;
 
@@ -85,7 +86,20 @@ void otSimSendEvent(const struct Event *aEvent)
 
     if(aEvent->mEvent != OT_SIM_EVENT_OTNS_STATUS_PUSH && aEvent->mEvent != OT_SIM_EVENT_UART_WRITE)
     {
-    	fprintf(stderr, "Sent event: %d\n", aEvent->mEvent);
+    	switch(aEvent->mEvent)
+    	{
+    	case OT_SIM_EVENT_ALARM_FIRED:
+    		fprintf(stderr, "Sent ALARM EVENT\n");
+    		break;
+    	case OT_SIM_EVENT_RADIO_FRAME_TX:
+    		fprintf(stderr, "Sent RADIO FRAME TX EVENT\n");
+    		break;
+    	case OT_SIM_EVENT_RADIO_FRAME_TX_ACK:
+    		fprintf(stderr, "Sent RADIO FRAME TX ACK EVENT\n");
+    		break;
+    	default:
+    		assert(false);
+    	}
     }
 
     if (rval < 0)
@@ -97,8 +111,7 @@ void otSimSendEvent(const struct Event *aEvent)
 
 static void receiveEvent(otInstance *aInstance)
 {
-	fprintf(stderr, "RECEIVED AN EVENT!\n");
-
+	fprintf(stderr, "In receiveEvent(), virtual time: %"PRIu64" us \n", sNow);
     struct Event event;
     ssize_t      rval = recvfrom(sSockFd, (char *)&event, sizeof(event), 0, NULL, NULL);
 
@@ -109,31 +122,37 @@ static void receiveEvent(otInstance *aInstance)
     }
 
     platformAlarmAdvanceNow(event.mDelay);
-    fprintf(stderr, "virtual time: %"PRIu64" us\n", sNow);
 
     switch (event.mEvent)
     {
     case OT_SIM_EVENT_ALARM_FIRED:
     	// Nothing to do. Alarm event is only used to advance time (see above).
-    	fprintf(stderr, "TWAS AN ALARM EVENT...\n");
-    	fprintf(stderr, "mDelay: %ld\n", event.mDelay);
+    	fprintf(stderr, "ALARM RECEIVED...\n");
+    	fprintf(stderr, "\tmDelay: %ld\n", event.mDelay);
         break;
 
     case OT_SIM_EVENT_RADIO_FRAME_RX:	// Rx of a radio frame is done. Here's struct RadioMessage.
-    	fprintf(stderr, "RECEIVED RADIO FRAME...\n");
+    	fprintf(stderr, "RADIO FRAME RECEIVED...\n");
+    	fprintf(stderr, "\tmDelay: %ld\n", event.mDelay);
         platformRadioReceive(aInstance, event.mData, event.mDataLength, event.mParam1);
         break;
 
     case OT_SIM_EVENT_RADIO_TX_DONE:
     	assert(event.mDataLength>=1);
+    	fprintf(stderr, "RADIO TX DONE RECEIVED...\n");
+    	fprintf(stderr, "\tmDelay: %ld\n", event.mDelay);
     	// the external simulator process will determine success or error of Tx, and report to here.
     	otError err = (otError) event.mData[0];
+    	if(err == OT_ERROR_CHANNEL_ACCESS_FAILURE)
+    	{
+    		fprintf(stderr, "CCA FAILURE...\n");
+    	}
     	platformRadioTransmitDone(aInstance, err);
         break;
 
     case OT_SIM_EVENT_UART_WRITE:
+    	fprintf(stderr, "UART WRITE RECEIVED\n");
         otPlatUartReceived(event.mData, event.mDataLength);
-    	fprintf(stderr, "TWAS A UART EVENT...\n");
     	fprintf(stderr, "%s\n", event.mData);
         break;
 
@@ -148,7 +167,7 @@ static void platformSendSleepEvent(void)
 
     assert(platformAlarmGetNext() > 0);
     event.mDelay      = platformAlarmGetNext();
-    fprintf(stderr, "platsend delay: %ld\n", event.mDelay);
+	fprintf(stderr, "In platformSendSleepEvent(), delay: %"PRIu64" us\n", event.mDelay);
 #if OPENTHREAD_CONFIG_WHITEFIELD_ENABLE
     event.mNodeId     = gNodeId;
 #endif

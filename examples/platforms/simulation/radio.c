@@ -744,8 +744,10 @@ exit:
 void platformRadioTransmitDone(otInstance *aInstance, otError err)
 {
     otEXPECT(sState == OT_RADIO_STATE_TRANSMIT || sState == OT_RADIO_STATE_RECEIVE);
+    fprintf(stderr, "In platformRadioTransmitDone()\n");
 
     if (sState == OT_RADIO_STATE_TRANSMIT) {
+    	fprintf(stderr, "sState == OT_RADIO_STATE_TRANSMIT\n");
 		if (!otMacFrameIsAckRequested(&sTransmitFrame) ||	// not waiting for ACK: transition to Rx state; see state diagram.
 				err != OT_ERROR_NONE ) {					// also in case of Tx failure: no wait for ACK, abort current Tx.
 			sState  = OT_RADIO_STATE_RECEIVE;
@@ -763,6 +765,7 @@ void platformRadioTransmitDone(otInstance *aInstance, otError err)
 		}
     }
     else if (sState == OT_RADIO_STATE_RECEIVE) {  // Ack transmit is done for received packet.
+    	fprintf(stderr, "sState == OT_RADIO_STATE_RECEIVE\n");
 #if OPENTHREAD_CONFIG_DIAG_ENABLE
         if (otPlatDiagModeGet())
         {

@@ -414,8 +414,10 @@ void SubMac::StartCsmaBackoff(void)
 {
     uint32_t backoff;
     uint32_t backoffExponent = kMinBE + mTransmitRetries + mCsmaBackoffs;
+	fprintf(stderr, "In SubMac::StartCsmaBackoff(), backoffExponent: %d\n", backoffExponent);
 
 #if !OPENTHREAD_MTD && OPENTHREAD_CONFIG_MAC_CSL_TRANSMITTER_ENABLE
+	fprintf(stderr, "Only non-mtds here...\n");
     if (mTransmitFrame.mInfo.mTxInfo.mTxDelay != 0)
     {
         SetState(kStateCslTransmit);
@@ -442,6 +444,7 @@ void SubMac::StartCsmaBackoff(void)
         ExitNow();
     }
 #endif // !OPENTHREAD_MTD && OPENTHREAD_CONFIG_MAC_CSL_TRANSMITTER_ENABLE
+    fprintf(stderr, "Both mtds and non mtds\n");
     SetState(kStateCsmaBackoff);
 
     VerifyOrExit(ShouldHandleCsmaBackOff(), BeginTransmit());
@@ -464,6 +467,7 @@ void SubMac::StartCsmaBackoff(void)
     }
 
 #if OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
+    fprintf(stderr, "starting backoff: %d us\n", backoff);
     mTimer.Start(backoff);
 #else
     mTimer.Start(backoff / 1000UL);
@@ -526,6 +530,7 @@ void SubMac::HandleTransmitStarted(TxFrame &aFrame)
 
 void SubMac::HandleTransmitDone(TxFrame &aFrame, RxFrame *aAckFrame, Error aError)
 {
+	fprintf(stderr, "In SubMac::HandleTransmitDone()\n");
     bool ccaSuccess = true;
     bool shouldRetx;
 
@@ -543,6 +548,7 @@ void SubMac::HandleTransmitDone(TxFrame &aFrame, RxFrame *aAckFrame, Error aErro
         break;
 
     case kErrorChannelAccessFailure:
+    	fprintf(stderr, "ccaSuccess = false\n");
         ccaSuccess = false;
 
         OT_FALL_THROUGH;
@@ -574,6 +580,7 @@ void SubMac::HandleTransmitDone(TxFrame &aFrame, RxFrame *aAckFrame, Error aErro
 
     if (!ccaSuccess && ShouldHandleCsmaBackOff() && mCsmaBackoffs < aFrame.GetMaxCsmaBackoffs())
     {
+    	fprintf(stderr, "Will do csma backoff\n");
         mCsmaBackoffs++;
         StartCsmaBackoff();
         ExitNow();
