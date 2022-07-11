@@ -73,7 +73,11 @@ OT_TOOL_WEAK void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const 
     otEXPECT_ACTION(charsWritten >= 0, logString[offset] = 0);
 
 exit:
+#if OPENTHREAD_CONFIG_WHITEFIELD_ENABLE
+    fprintf(stderr, "%s\n", logString);
+#else
     syslog(LOG_CRIT, "%s", logString);
+#endif
 }
 
 #endif // #if (OPENTHREAD_CONFIG_LOG_OUTPUT == OPENTHREAD_CONFIG_LOG_OUTPUT_PLATFORM_DEFINED)
